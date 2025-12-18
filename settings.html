@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Tracker - Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f6f7 0%, #e8eaed 100%);
+            min-height: 100vh;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .nav-tab {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #7a9b76;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .toggle-slider {
+            background-color: #7a9b76;
+        }
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        .btn-primary {
+            background: #7a9b76;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: #5a8a5a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(122, 155, 118, 0.3);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #2d3748;
+            border: 2px solid #7a9b76;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: #7a9b76;
+            color: white;
+        }
+        .btn-danger {
+            background: #e07a5f;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-danger:hover {
+            background: #d1664a;
+            transform: translateY(-1px);
+        }
+        .floating-label {
+            position: relative;
+        }
+        .floating-label input:focus + label,
+        .floating-label input:not(:placeholder-shown) + label,
+        .floating-label select:focus + label,
+        .floating-label select:not([value=""]) + label {
+            transform: translateY(-1.5rem) scale(0.8);
+            color: #7a9b76;
+        }
+        .theme-option {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .theme-option.selected {
+            border-color: #7a9b76;
+            background: rgba(122, 155, 118, 0.1);
+        }
+        .profile-upload {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .profile-upload:hover {
+            transform: scale(1.05);
+        }
+        .profile-upload input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">$</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-800">SmartExpense</span>
+                    </div>
+                </div>
+                <div class="flex space-x-8">
+                    <a href="index.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Dashboard</a>
+                    <a href="analytics.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Analytics</a>
+                    <a href="budget.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Budget</a>
+                    <a href="settings.html" class="nav-tab active px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Settings</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="btn-primary px-4 py-2 rounded-lg text-sm font-medium" onclick="saveSettings()">
+                        Save Changes
+                    </button>
+                    <img src="./resources/user-avatar.jpg" alt="Profile" class="w-8 h-8 rounded-full">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Settings</h1>
+            <p class="text-gray-600">Customize your experience and manage your account</p>
+        </div>
+
+        <!-- Settings Grid -->
+        <div class="space-y-8">
+            <!-- Profile Settings -->
+            <div class="card rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-6">Profile Settings</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="floating-label">
+                            <input type="text" id="first-name" placeholder=" " value="John" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <label for="first-name" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">First Name</label>
+                        </div>
+                        <div class="floating-label">
+                            <input type="text" id="last-name" placeholder=" " value="Doe" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <label for="last-name" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Last Name</label>
+                        </div>
+                        <div class="floating-label">
+                            <input type="email" id="email" placeholder=" " value="john.doe@example.com" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <label for="email" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Email Address</label>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="text-center">
+                            <label class="profile-upload">
+                                <img id="profile-preview" src="./resources/user-avatar.jpg" alt="Profile" class="w-24 h-24 rounded-full mx-auto mb-2">
+                                <input type="file" id="profile-upload" accept="image/*" onchange="handleProfileUpload(event)">
+                                <div class="text-sm text-green-600 font-medium">Change Photo</div>
+                            </label>
+                        </div>
+                        <div class="floating-label">
+                            <input type="tel" id="phone" placeholder=" " value="+1 (555) 123-4567" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <label for="phone" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Phone Number</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preferences -->
+            <div class="card rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-6">Preferences</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="floating-label">
+                            <select id="currency" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="GBP">GBP (£)</option>
+                                <option value="CAD">CAD (C$)</option>
+                                <option value="AUD">AUD (A$)</option>
+                            </select>
+                            <label for="currency" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Currency</label>
+                        </div>
+                        <div class="floating-label">
+                            <select id="date-format" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                            </select>
+                            <label for="date-format" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Date Format</label>
+                        </div>
+                        <div class="floating-label">
+                            <select id="timezone" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                                <option value="EST">Eastern Time (EST)</option>
+                                <option value="CST">Central Time (CST)</option>
+                                <option value="MST">Mountain Time (MST)</option>
+                                <option value="PST">Pacific Time (PST)</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+                            <label for="timezone" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Timezone</label>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="floating-label">
+                            <select id="language" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                                <option value="en">English</option>
+                                <option value="es">Español</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="zh">中文</option>
+                            </select>
+                            <label for="language" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Language</label>
+                        </div>
+                        <div class="floating-label">
+                            <select id="theme" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                                <option value="auto">Auto</option>
+                            </select>
+                            <label for="theme" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Theme</label>
+                        </div>
+                        <div class="floating-label">
+                            <select id="week-start" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                                <option value="0">Sunday</option>
+                                <option value="1">Monday</option>
+                            </select>
+                            <label for="week-start" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Week Starts On</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="card rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-6">Notifications</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">Budget Alerts</h4>
+                            <p class="text-sm text-gray-600">Get notified when approaching budget limits</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="budget-alerts" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">Bill Reminders</h4>
+                            <p class="text-sm text-gray-600">Reminders for upcoming bills and payments</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="bill-reminders" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">Weekly Reports</h4>
+                            <p class="text-sm text-gray-600">Weekly spending summary and insights</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="weekly-reports" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">Goal Achievements</h4>
+                            <p class="text-sm text-gray-600">Celebrate when you reach savings goals</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="goal-achievements" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-800">Transaction Notifications</h4>
+                            <p class="text-sm text-gray-600">Notifications for large transactions</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="transaction-notifications">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                    <h4 class="font-medium text-gray-800 mb-2">Notification Methods</h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-3" checked> Email notifications
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-3" checked> Push notifications
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" class="mr-3"> SMS notifications
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data & Privacy -->
+            <div class="card rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-6">Data & Privacy</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <h4 class="font-medium text-gray-800">Data Management</h4>
+                        <div class="space-y-3">
+                            <button class="w-full btn-secondary py-3 px-4 rounded-lg text-sm font-medium" onclick="exportData()">
+                                Export My Data
+                            </button>
+                            <button class="w-full btn-secondary py-3 px-4 rounded-lg text-sm font-medium" onclick="importData()">
+                                Import Data
+                            </button>
+                            <button class="w-full btn-danger py-3 px-4 rounded-lg text-sm font-medium" onclick="clearData()">
+                                Clear All Data
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <h4 class="font-medium text-gray-800">Privacy Settings</h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Analytics tracking</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="analytics-tracking" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Crash reporting</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="crash-reporting" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600">Marketing emails</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="marketing-emails">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security -->
+            <div class="card rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-6">Security</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="floating-label">
+                            <input type="password" id="current-password" placeholder=" " class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <label for="current-password" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Current Password</label>
+                        </div>
+                        <div class="floating-label">
+                            <input type="password" id="new-password" placeholder=" " class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <label for="new-password" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">New Password</label>
+                        </div>
+                        <div class="floating-label">
+                            <input type="password" id="confirm-password" placeholder=" " class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <label for="confirm-password" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Confirm New Password</label>
+                        </div>
+                        <button class="btn-primary w-full py-3 px-4 rounded-lg font-medium" onclick="changePassword()">
+                            Change Password
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <h4 class="font-medium text-gray-800">Two-Factor Authentication</h4>
+                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <span class="text-sm text-gray-700">SMS Authentication</span>
+                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Enabled</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span class="text-sm text-gray-700">Email Authentication</span>
+                            <button class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors">Enable</button>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span class="text-sm text-gray-700">Authenticator App</span>
+                            <button class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors">Enable</button>
+                        </div>
+                        <h4 class="font-medium text-gray-800 mt-6">Login History</h4>
+                        <div class="text-sm text-gray-600">
+                            <p>Last login: December 14, 2025 at 2:30 PM</p>
+                            <p class="text-xs mt-1">From: New York, NY, USA</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About -->
+            <div class="card rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-6">About</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <h4 class="font-medium text-gray-800">Application Info</h4>
+                        <div class="space-y-2 text-sm text-gray-600">
+                            <p><span class="font-medium">Version:</span> 2.1.0</p>
+                            <p><span class="font-medium">Last Updated:</span> December 2025</p>
+                            <p><span class="font-medium">Developer:</span> SmartExpense Team</p>
+                            <p><span class="font-medium">License:</span> Proprietary</p>
+                        </div>
+                        <div class="space-y-3 pt-4">
+                            <button class="w-full btn-secondary py-2 px-4 rounded-lg text-sm font-medium" onclick="showPrivacyPolicy()">
+                                Privacy Policy
+                            </button>
+                            <button class="w-full btn-secondary py-2 px-4 rounded-lg text-sm font-medium" onclick="showTermsOfService()">
+                                Terms of Service
+                            </button>
+                            <button class="w-full btn-secondary py-2 px-4 rounded-lg text-sm font-medium" onclick="contactSupport()">
+                                Contact Support
+                            </button>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <h4 class="font-medium text-gray-800">Quick Actions</h4>
+                        <div class="space-y-3">
+                            <button class="w-full btn-secondary py-2 px-4 rounded-lg text-sm font-medium" onclick="showTutorial()">
+                                Show Tutorial
+                            </button>
+                            <button class="w-full btn-secondary py-2 px-4 rounded-lg text-sm font-medium" onclick="rateApp()">
+                                Rate This App
+                            </button>
+                            <button class="w-full btn-secondary py-2 px-4 rounded-lg text-sm font-medium" onclick="shareApp()">
+                                Share with Friends
+                            </button>
+                            <button class="w-full btn-danger py-2 px-4 rounded-lg text-sm font-medium" onclick="deleteAccount()">
+                                Delete Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden file input for import -->
+    <input type="file" id="import-file" accept=".json" style="display: none;" onchange="handleImport(event)">
+
+    <script>
+        // Settings Page JavaScript
+        class SettingsManager {
+            constructor() {
+                this.settings = this.loadSettings();
+                this.init();
+            }
+
+            init() {
+                this.populateForm();
+                this.setupEventListeners();
+                this.animateElements();
+            }
+
+            setupEventListeners() {
+                // Auto-save on form changes
+                document.querySelectorAll('input, select').forEach(input => {
+                    input.addEventListener('change', () => this.autoSave());
+                });
+            }
+
+            populateForm() {
+                // Profile settings
+                document.getElementById('first-name').value = this.settings.firstName || 'John';
+                document.getElementById('last-name').value = this.settings.lastName || 'Doe';
+                document.getElementById('email').value = this.settings.email || 'john.doe@example.com';
+                document.getElementById('phone').value = this.settings.phone || '+1 (555) 123-4567';
+
+                // Preferences
+                document.getElementById('currency').value = this.settings.currency || 'USD';
+                document.getElementById('date-format').value = this.settings.dateFormat || 'MM/DD/YYYY';
+                document.getElementById('timezone').value = this.settings.timezone || 'EST';
+                document.getElementById('language').value = this.settings.language || 'en';
+                document.getElementById('theme').value = this.settings.theme || 'light';
+                document.getElementById('week-start').value = this.settings.weekStart || '0';
+
+                // Notifications
+                document.getElementById('budget-alerts').checked = this.settings.budgetAlerts !== false;
+                document.getElementById('bill-reminders').checked = this.settings.billReminders !== false;
+                document.getElementById('weekly-reports').checked = this.settings.weeklyReports !== false;
+                document.getElementById('goal-achievements').checked = this.settings.goalAchievements !== false;
+                document.getElementById('transaction-notifications').checked = this.settings.transactionNotifications === true;
+
+                // Privacy
+                document.getElementById('analytics-tracking').checked = this.settings.analyticsTracking !== false;
+                document.getElementById('crash-reporting').checked = this.settings.crashReporting !== false;
+                document.getElementById('marketing-emails').checked = this.settings.marketingEmails === true;
+            }
+
+            autoSave() {
+                // Show a subtle save indicator
+                this.showSaveIndicator();
+                
+                // Debounced save
+                clearTimeout(this.saveTimeout);
+                this.saveTimeout = setTimeout(() => {
+                    this.saveSettings();
+                }, 1000);
+            }
+
+            saveSettings() {
+                const settings = {
+                    // Profile
+                    firstName: document.getElementById('first-name').value,
+                    lastName: document.getElementById('last-name').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+
+                    // Preferences
+                    currency: document.getElementById('currency').value,
+                    dateFormat: document.getElementById('date-format').value,
+                    timezone: document.getElementById('timezone').value,
+                    language: document.getElementById('language').value,
+                    theme: document.getElementById('theme').value,
+                    weekStart: document.getElementById('week-start').value,
+
+                    // Notifications
+                    budgetAlerts: document.getElementById('budget-alerts').checked,
+                    billReminders: document.getElementById('bill-reminders').checked,
+                    weeklyReports: document.getElementById('weekly-reports').checked,
+                    goalAchievements: document.getElementById('goal-achievements').checked,
+                    transactionNotifications: document.getElementById('transaction-notifications').checked,
+
+                    // Privacy
+                    analyticsTracking: document.getElementById('analytics-tracking').checked,
+                    crashReporting: document.getElementById('crash-reporting').checked,
+                    marketingEmails: document.getElementById('marketing-emails').checked
+                };
+
+                localStorage.setItem('settingsManagerSettings', JSON.stringify(settings));
+                this.settings = settings;
+            }
+
+            loadSettings() {
+                const saved = localStorage.getItem('settingsManagerSettings');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                return {};
+            }
+
+            showSaveIndicator() {
+                // Remove existing indicator
+                const existing = document.getElementById('save-indicator');
+                if (existing) {
+                    existing.remove();
+                }
+
+                // Create new indicator
+                const indicator = document.createElement('div');
+                indicator.id = 'save-indicator';
+                indicator.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 text-sm';
+                indicator.textContent = 'Saving...';
+                document.body.appendChild(indicator);
+
+                // Animate in
+                anime({
+                    targets: indicator,
+                    translateX: [300, 0],
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 300
+                });
+
+                // Remove after delay
+                setTimeout(() => {
+                    anime({
+                        targets: indicator,
+                        translateX: [0, 300],
+                        opacity: [1, 0],
+                        easing: 'easeInExpo',
+                        duration: 300,
+                        complete: () => indicator.remove()
+                    });
+                }, 2000);
+            }
+
+            animateElements() {
+                anime({
+                    targets: '.card',
+                    translateY: [50, 0],
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 1000,
+                    delay: anime.stagger(100)
+                });
+            }
+        }
+
+        // Global functions
+        function saveSettings() {
+            settingsManager.saveSettings();
+            
+            // Show success message
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+            notification.textContent = 'Settings saved successfully!';
+            document.body.appendChild(notification);
+
+            anime({
+                targets: notification,
+                translateX: [300, 0],
+                opacity: [0, 1],
+                easing: 'easeOutExpo',
+                duration: 500
+            });
+
+            setTimeout(() => {
+                anime({
+                    targets: notification,
+                    translateX: [0, 300],
+                    opacity: [1, 0],
+                    easing: 'easeInExpo',
+                    duration: 500,
+                    complete: () => notification.remove()
+                });
+            }, 3000);
+        }
+
+        function handleProfileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-preview').src = e.target.result;
+                    settingsManager.autoSave();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function exportData() {
+            const data = {
+                transactions: localStorage.getItem('expenseTrackerTransactions'),
+                budget: localStorage.getItem('budgetManagerBudget'),
+                goals: localStorage.getItem('budgetManagerGoals'),
+                settings: localStorage.getItem('settingsManagerSettings')
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'smartexpense-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            document.getElementById('import-file').click();
+        }
+
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        if (data.transactions) localStorage.setItem('expenseTrackerTransactions', data.transactions);
+                        if (data.budget) localStorage.setItem('budgetManagerBudget', data.budget);
+                        if (data.goals) localStorage.setItem('budgetManagerGoals', data.goals);
+                        if (data.settings) localStorage.setItem('settingsManagerSettings', data.settings);
+                        
+                        alert('Data imported successfully! Please refresh the page.');
+                    } catch (error) {
+                        alert('Error importing data. Please check the file format.');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function clearData() {
+            if (confirm('Are you sure you want to clear all data? This action cannot be undone.')) {
+                localStorage.clear();
+                alert('All data has been cleared. Please refresh the page.');
+            }
+        }
+
+        function changePassword() {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                alert('Please fill in all password fields');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                alert('New passwords do not match');
+                return;
+            }
+
+            // Mock password change
+            alert('Password changed successfully!');
+            
+            // Clear form
+            document.getElementById('current-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+        }
+
+        function showPrivacyPolicy() {
+            alert('Privacy Policy: Your financial data is encrypted and stored securely. We never share your personal information with third parties.');
+        }
+
+        function showTermsOfService() {
+            alert('Terms of Service: By using SmartExpense, you agree to our terms of service and privacy policy.');
+        }
+
+        function contactSupport() {
+            alert('Support: For assistance, please email support@smartexpense.com or call 1-800-SMART-EX');
+        }
+
+        function showTutorial() {
+            alert('Tutorial: Welcome to SmartExpense! Start by adding your first transaction, then explore the analytics and budgeting features.');
+        }
+
+        function rateApp() {
+            alert('Thank you for using SmartExpense! We\'d love to hear your feedback. Please rate us in the app store.');
+        }
+
+        function shareApp() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'SmartExpense',
+                    text: 'Check out SmartExpense - the smart way to track your expenses!',
+                    url: window.location.href
+                });
+            } else {
+                alert('Share SmartExpense with your friends! Use this link: ' + window.location.href);
+            }
+        }
+
+        function deleteAccount() {
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently lost.')) {
+                if (confirm('This is your final warning. Deleting your account is permanent and cannot be reversed. Continue?')) {
+                    alert('Account deletion requested. Please contact support to complete the process.');
+                }
+            }
+        }
+
+        // Initialize
+        let settingsManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            settingsManager = new SettingsManager();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Tracker - Budget</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f6f7 0%, #e8eaed 100%);
+            min-height: 100vh;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .nav-tab {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #7a9b76;
+        }
+        .budget-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #e2e8f0;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .budget-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #7a9b76;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .budget-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(122, 155, 118, 0.4);
+        }
+        .budget-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #7a9b76;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+        .goal-card {
+            background: linear-gradient(135deg, #7a9b76 0%, #5a8a5a 100%);
+            color: white;
+        }
+        .achievement-badge {
+            background: linear-gradient(135deg, #f2cc8f 0%, #e6b87a 100%);
+            color: #2d3748;
+        }
+        .btn-primary {
+            background: #7a9b76;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: #5a8a5a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(122, 155, 118, 0.3);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #2d3748;
+            border: 2px solid #7a9b76;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: #7a9b76;
+            color: white;
+        }
+        .floating-label {
+            position: relative;
+        }
+        .floating-label input:focus + label,
+        .floating-label input:not(:placeholder-shown) + label {
+            transform: translateY(-1.5rem) scale(0.8);
+            color: #7a9b76;
+        }
+        .category-item {
+            transition: all 0.3s ease;
+        }
+        .category-item:hover {
+            background: rgba(122, 155, 118, 0.05);
+            transform: translateX(4px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">$</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-800">SmartExpense</span>
+                    </div>
+                </div>
+                <div class="flex space-x-8">
+                    <a href="index.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Dashboard</a>
+                    <a href="analytics.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Analytics</a>
+                    <a href="budget.html" class="nav-tab active px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Budget</a>
+                    <a href="settings.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Settings</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="btn-primary px-4 py-2 rounded-lg text-sm font-medium" onclick="saveBudget()">
+                        Save Budget
+                    </button>
+                    <img src="./resources/user-avatar.jpg" alt="Profile" class="w-8 h-8 rounded-full">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Budget Management</h1>
+            <p class="text-gray-600">Plan, track, and optimize your spending with smart budgeting tools</p>
+        </div>
+
+        <!-- Budget Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="goal-card card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white/80 text-sm">Monthly Budget</p>
+                        <p class="text-2xl font-bold mono" id="total-budget">$4,200</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zM6 6a2 2 0 012 2v6a2 2 0 002 2h8a2 2 0 002-2V8a2 2 0 00-2-2h-8a2 2 0 00-2 2v2H6V6z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Spent This Month</p>
+                        <p class="text-2xl font-bold mono text-red-500" id="spent-amount">$3,147</p>
+                    </div>
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Remaining</p>
+                        <p class="text-2xl font-bold mono text-green-600" id="remaining-amount">$1,053</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Budget Allocation -->
+            <div class="lg:col-span-2">
+                <div class="card rounded-xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-semibold">Budget Allocation</h3>
+                        <button class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium" onclick="resetBudget()">
+                            Reset All
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-6" id="budget-categories">
+                        <!-- Categories will be populated by JavaScript -->
+                    </div>
+                    
+                    <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <span class="font-medium">Total Allocated:</span>
+                            <span class="font-bold mono text-lg" id="total-allocated">$0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                            <div id="allocation-progress" class="progress-bar bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="space-y-6">
+                <!-- Budget Visualization -->
+                <div class="card rounded-xl p-6">
+                    <h3 class="text-lg font-semibold mb-4">Budget Breakdown</h3>
+                    <div id="budget-chart" style="height: 250px;"></div>
+                </div>
+
+                <!-- Savings Goals -->
+                <div class="card rounded-xl p-6">
+                    <h3 class="text-lg font-semibold mb-4">Savings Goals</h3>
+                    <div class="space-y-4" id="savings-goals">
+                        <!-- Goals will be populated by JavaScript -->
+                    </div>
+                    <button class="w-full btn-secondary mt-4 py-2 rounded-lg text-sm font-medium" onclick="addGoal()">
+                        + Add Goal
+                    </button>
+                </div>
+
+                <!-- Achievements -->
+                <div class="card rounded-xl p-6">
+                    <h3 class="text-lg font-semibold mb-4">Achievements</h3>
+                    <div class="space-y-3" id="achievements">
+                        <!-- Achievements will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Recommendations -->
+        <div class="mt-8">
+            <div class="card rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-6">Smart Recommendations</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="recommendations">
+                    <!-- Recommendations will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goal Modal -->
+    <div id="goal-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+            <h3 class="text-lg font-semibold mb-4">Add Savings Goal</h3>
+            <form id="goal-form" class="space-y-4">
+                <div class="floating-label">
+                    <input type="text" id="goal-name" placeholder=" " class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <label for="goal-name" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Goal Name</label>
+                </div>
+                <div class="floating-label">
+                    <input type="number" id="goal-amount" placeholder=" " class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <label for="goal-amount" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Target Amount</label>
+                </div>
+                <div class="floating-label">
+                    <input type="date" id="goal-deadline" placeholder=" " class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                    <label for="goal-deadline" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Target Date</label>
+                </div>
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" class="btn-secondary flex-1 py-3 px-4 rounded-lg font-medium" onclick="closeGoalModal()">Cancel</button>
+                    <button type="submit" class="btn-primary flex-1 py-3 px-4 rounded-lg font-medium">Add Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Budget Page JavaScript
+        class BudgetManager {
+            constructor() {
+                this.budget = this.loadBudget();
+                this.goals = this.loadGoals();
+                this.achievements = this.loadAchievements();
+                this.categories = {
+                    food: { name: 'Food & Dining', icon: '🍽️', color: '#e07a5f', default: 500 },
+                    transport: { name: 'Transportation', icon: '🚗', color: '#81a1c1', default: 300 },
+                    shopping: { name: 'Shopping', icon: '🛍️', color: '#b893a3', default: 400 },
+                    utilities: { name: 'Utilities', icon: '⚡', color: '#f2cc8f', default: 200 },
+                    entertainment: { name: 'Entertainment', icon: '🎬', color: '#a8a3c7', default: 150 },
+                    health: { name: 'Healthcare', icon: '🏥', color: '#7a9b76', default: 100 },
+                    education: { name: 'Education', icon: '📚', color: '#5a9b9b', default: 200 },
+                    other: { name: 'Other', icon: '📋', color: '#d4b896', default: 150 }
+                };
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.renderBudgetCategories();
+                this.renderSavingsGoals();
+                this.renderAchievements();
+                this.renderRecommendations();
+                this.updateBudgetChart();
+                this.updateBudgetOverview();
+                this.animateElements();
+            }
+
+            setupEventListeners() {
+                document.getElementById('goal-form').addEventListener('submit', (e) => this.handleGoalSubmit(e));
+            }
+
+            renderBudgetCategories() {
+                const container = document.getElementById('budget-categories');
+                container.innerHTML = Object.entries(this.categories).map(([key, category]) => {
+                    const allocated = this.budget[key] || category.default;
+                    const spent = this.getSpentAmount(key);
+                    const percentage = Math.min((spent / allocated) * 100, 100);
+                    const isOverBudget = spent > allocated;
+                    
+                    return `
+                        <div class="category-item p-4 border border-gray-200 rounded-lg">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-xl" style="background-color: ${category.color}20; color: ${category.color};">
+                                        ${category.icon}
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-800">${category.name}</h4>
+                                        <p class="text-sm text-gray-500">$${spent.toFixed(2)} of $${allocated.toFixed(2)}</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold mono ${isOverBudget ? 'text-red-500' : 'text-gray-800'}">$${allocated.toFixed(2)}</p>
+                                    <p class="text-xs ${isOverBudget ? 'text-red-500' : 'text-green-600'}">${isOverBudget ? 'Over budget' : `${(100 - percentage).toFixed(0)}% left`}</p>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <input type="range" 
+                                       class="budget-slider w-full" 
+                                       min="0" 
+                                       max="1000" 
+                                       value="${allocated}" 
+                                       data-category="${key}"
+                                       onchange="budgetManager.updateCategoryBudget('${key}', this.value)">
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="progress-bar ${isOverBudget ? 'bg-red-500' : percentage > 80 ? 'bg-yellow-500' : 'bg-green-500'} h-2 rounded-full" 
+                                     style="width: ${Math.min(percentage, 100)}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                this.updateTotalAllocated();
+            }
+
+            updateCategoryBudget(category, value) {
+                this.budget[category] = parseFloat(value);
+                this.saveBudget();
+                this.renderBudgetCategories();
+                this.updateBudgetChart();
+                this.updateBudgetOverview();
+                this.renderRecommendations();
+            }
+
+            updateTotalAllocated() {
+                const total = Object.values(this.budget).reduce((sum, amount) => sum + amount, 0);
+                const totalAllocatedEl = document.getElementById('total-allocated');
+                const allocationProgress = document.getElementById('allocation-progress');
+                
+                totalAllocatedEl.textContent = `$${total.toFixed(0)}`;
+                
+                const percentage = Math.min((total / 4200) * 100, 100);
+                allocationProgress.style.width = `${percentage}%`;
+                
+                if (percentage > 100) {
+                    allocationProgress.className = 'progress-bar bg-red-500 h-2 rounded-full';
+                } else if (percentage > 80) {
+                    allocationProgress.className = 'progress-bar bg-yellow-500 h-2 rounded-full';
+                } else {
+                    allocationProgress.className = 'progress-bar bg-green-500 h-2 rounded-full';
+                }
+            }
+
+            renderSavingsGoals() {
+                const container = document.getElementById('savings-goals');
+                
+                if (this.goals.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-8 text-gray-500">
+                            <svg class="w-12 h-12 mx-auto mb-4 opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            <p class="text-sm">No savings goals yet</p>
+                            <p class="text-xs mt-1">Add your first goal to get started</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                container.innerHTML = this.goals.map((goal, index) => {
+                    const progress = (goal.current / goal.target) * 100;
+                    const daysLeft = Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+                    
+                    return `
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <h4 class="font-medium text-gray-800">${goal.name}</h4>
+                                <button onclick="budgetManager.removeGoal(${index})" class="text-gray-400 hover:text-red-500 text-xs">×</button>
+                            </div>
+                            <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
+                                <span>$${goal.current.toFixed(2)} of $${goal.target.toFixed(2)}</span>
+                                <span>${daysLeft > 0 ? `${daysLeft} days left` : 'Overdue'}</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="progress-bar bg-green-500 h-2 rounded-full" style="width: ${Math.min(progress, 100)}%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">${progress.toFixed(1)}% complete</p>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderAchievements() {
+                const container = document.getElementById('achievements');
+                
+                const allAchievements = [
+                    { id: 'first_budget', name: 'Budget Master', description: 'Created your first budget', icon: '🎯', unlocked: true },
+                    { id: 'savings_streak', name: 'Savings Streak', description: 'Saved money for 7 days', icon: '🔥', unlocked: true },
+                    { id: 'goal_crusher', name: 'Goal Crusher', description: 'Completed a savings goal', icon: '🏆', unlocked: false },
+                    { id: 'budget_guru', name: 'Budget Guru', description: 'Stayed under budget for a month', icon: '🧘', unlocked: false },
+                    { id: 'expense_tracker', name: 'Expense Tracker', description: 'Logged 100 transactions', icon: '📊', unlocked: true },
+                    { id: 'financial_wizard', name: 'Financial Wizard', description: 'Saved over $1000', icon: '🧙', unlocked: false }
+                ];
+                
+                container.innerHTML = allAchievements.map(achievement => `
+                    <div class="flex items-center space-x-3 p-2 rounded-lg ${achievement.unlocked ? 'achievement-badge' : 'bg-gray-100'}">
+                        <span class="text-lg">${achievement.icon}</span>
+                        <div class="flex-1">
+                            <p class="font-medium text-sm ${achievement.unlocked ? '' : 'text-gray-500'}">${achievement.name}</p>
+                            <p class="text-xs ${achievement.unlocked ? 'text-gray-700' : 'text-gray-400'}">${achievement.description}</p>
+                        </div>
+                        ${achievement.unlocked ? '<span class="text-green-600 text-xs">✓</span>' : '<span class="text-gray-400 text-xs">🔒</span>'}
+                    </div>
+                `).join('');
+            }
+
+            renderRecommendations() {
+                const container = document.getElementById('recommendations');
+                
+                const recommendations = [
+                    {
+                        title: 'Reduce Dining Out',
+                        description: 'You\'re spending 20% more on food than budgeted',
+                        action: 'Consider meal prepping',
+                        icon: '🍽️',
+                        priority: 'high'
+                    },
+                    {
+                        title: 'Optimize Transportation',
+                        description: 'Gas expenses are 15% over budget',
+                        action: 'Try carpooling or public transport',
+                        icon: '🚗',
+                        priority: 'medium'
+                    },
+                    {
+                        title: 'Emergency Fund',
+                        description: 'Build a 3-month emergency fund',
+                        action: 'Set up automatic transfers',
+                        icon: '💰',
+                        priority: 'high'
+                    },
+                    {
+                        title: 'Subscription Audit',
+                        description: 'Review monthly subscriptions',
+                        action: 'Cancel unused services',
+                        icon: '📱',
+                        priority: 'low'
+                    },
+                    {
+                        title: 'Energy Savings',
+                        description: 'Utility bills are trending up',
+                        action: 'Implement energy-saving habits',
+                        icon: '⚡',
+                        priority: 'medium'
+                    },
+                    {
+                        title: 'Investment Opportunity',
+                        description: 'You have excess cash in checking',
+                        action: 'Consider investment options',
+                        icon: '📈',
+                        priority: 'low'
+                    }
+                ];
+                
+                container.innerHTML = recommendations.map(rec => `
+                    <div class="p-4 border border-gray-200 rounded-lg hover:border-green-300 transition-colors">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg bg-gray-100">
+                                ${rec.icon}
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <h4 class="font-medium text-gray-800">${rec.title}</h4>
+                                    <span class="px-2 py-1 text-xs rounded-full ${rec.priority === 'high' ? 'bg-red-100 text-red-700' : rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}">${rec.priority}</span>
+                                </div>
+                                <p class="text-sm text-gray-600 mb-2">${rec.description}</p>
+                                <p class="text-sm font-medium text-green-600">${rec.action}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateBudgetChart() {
+                const chartDom = document.getElementById('budget-chart');
+                const myChart = echarts.init(chartDom);
+                
+                const data = Object.entries(this.budget).map(([key, amount]) => ({
+                    name: this.categories[key].name,
+                    value: amount,
+                    itemStyle: { color: this.categories[key].color }
+                }));
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'item',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        borderColor: '#7a9b76',
+                        textStyle: { color: '#2d3748' },
+                        formatter: '{b}: ${c} ({d}%)'
+                    },
+                    series: [{
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['50%', '50%'],
+                        data: data,
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        },
+                        label: {
+                            show: false
+                        },
+                        labelLine: {
+                            show: false
+                        }
+                    }]
+                };
+                
+                myChart.setOption(option);
+            }
+
+            updateBudgetOverview() {
+                const totalBudget = 4200;
+                const spent = this.calculateTotalSpent();
+                const remaining = totalBudget - spent;
+                
+                document.getElementById('total-budget').textContent = `$${totalBudget.toLocaleString()}`;
+                document.getElementById('spent-amount').textContent = `$${spent.toLocaleString()}`;
+                document.getElementById('remaining-amount').textContent = `$${remaining.toLocaleString()}`;
+            }
+
+            calculateTotalSpent() {
+                // Mock calculation - in real app, this would come from transaction data
+                return 3147;
+            }
+
+            getSpentAmount(category) {
+                // Mock calculation - in real app, this would come from transaction data
+                const mockSpending = {
+                    food: 320,
+                    transport: 180,
+                    shopping: 450,
+                    utilities: 120,
+                    entertainment: 85,
+                    health: 45,
+                    education: 0,
+                    other: 67
+                };
+                return mockSpending[category] || 0;
+            }
+
+            addGoal() {
+                document.getElementById('goal-modal').classList.remove('hidden');
+                document.getElementById('goal-modal').classList.add('flex');
+            }
+
+            closeGoalModal() {
+                document.getElementById('goal-modal').classList.add('hidden');
+                document.getElementById('goal-modal').classList.remove('flex');
+                document.getElementById('goal-form').reset();
+            }
+
+            handleGoalSubmit(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('goal-name').value;
+                const target = parseFloat(document.getElementById('goal-amount').value);
+                const deadline = document.getElementById('goal-deadline').value;
+                
+                if (!name || !target || !deadline) {
+                    alert('Please fill in all fields');
+                    return;
+                }
+                
+                const goal = {
+                    id: Date.now(),
+                    name,
+                    target,
+                    current: 0,
+                    deadline,
+                    created: new Date().toISOString()
+                };
+                
+                this.goals.push(goal);
+                this.saveGoals();
+                this.renderSavingsGoals();
+                this.closeGoalModal();
+            }
+
+            removeGoal(index) {
+                if (confirm('Are you sure you want to remove this goal?')) {
+                    this.goals.splice(index, 1);
+                    this.saveGoals();
+                    this.renderSavingsGoals();
+                }
+            }
+
+            animateElements() {
+                anime({
+                    targets: '.card',
+                    translateY: [50, 0],
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 1000,
+                    delay: anime.stagger(100)
+                });
+                
+                anime({
+                    targets: '.category-item',
+                    translateX: [-30, 0],
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 800,
+                    delay: anime.stagger(100, {start: 300})
+                });
+            }
+
+            loadBudget() {
+                const saved = localStorage.getItem('budgetManagerBudget');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                
+                // Default budget allocation
+                return {
+                    food: 500,
+                    transport: 300,
+                    shopping: 400,
+                    utilities: 200,
+                    entertainment: 150,
+                    health: 100,
+                    education: 200,
+                    other: 150
+                };
+            }
+
+            saveBudget() {
+                localStorage.setItem('budgetManagerBudget', JSON.stringify(this.budget));
+            }
+
+            loadGoals() {
+                const saved = localStorage.getItem('budgetManagerGoals');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                return [];
+            }
+
+            saveGoals() {
+                localStorage.setItem('budgetManagerGoals', JSON.stringify(this.goals));
+            }
+
+            loadAchievements() {
+                const saved = localStorage.getItem('budgetManagerAchievements');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                return [];
+            }
+
+            saveAchievements() {
+                localStorage.setItem('budgetManagerAchievements', JSON.stringify(this.achievements));
+            }
+        }
+
+        // Global functions
+        function saveBudget() {
+            budgetManager.saveBudget();
+            alert('Budget saved successfully!');
+        }
+
+        function resetBudget() {
+            if (confirm('Are you sure you want to reset all budget allocations?')) {
+                budgetManager.budget = {};
+                budgetManager.saveBudget();
+                budgetManager.renderBudgetCategories();
+                budgetManager.updateBudgetChart();
+                budgetManager.updateBudgetOverview();
+            }
+        }
+
+        function addGoal() {
+            budgetManager.addGoal();
+        }
+
+        function closeGoalModal() {
+            budgetManager.closeGoalModal();
+        }
+
+        // Initialize
+        let budgetManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            budgetManager = new BudgetManager();
+        });
+    </script>
+</body>
+</html>

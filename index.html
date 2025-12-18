@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Tracker - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://unpkg.com/splitting@1.0.6/dist/splitting.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/splitting@1.0.6/dist/splitting.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f6f7 0%, #e8eaed 100%);
+            min-height: 100vh;
+        }
+        .hero-bg {
+            background: url('./resources/hero-bg.jpg') center/cover;
+            position: relative;
+        }
+        .hero-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 35, 50, 0.7);
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .nav-tab {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #7a9b76;
+        }
+        .balance-card {
+            background: linear-gradient(135deg, #7a9b76 0%, #5a8a5a 100%);
+            color: white;
+        }
+        .expense-item {
+            transition: all 0.2s ease;
+        }
+        .expense-item:hover {
+            background: rgba(122, 155, 118, 0.05);
+            transform: translateX(4px);
+        }
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .progress-ring {
+            transform: rotate(-90deg);
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform-origin: 50% 50%;
+        }
+        .btn-primary {
+            background: #7a9b76;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: #5a8a5a;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(122, 155, 118, 0.3);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: #2d3748;
+            border: 2px solid #7a9b76;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: #7a9b76;
+            color: white;
+        }
+        .floating-label {
+            position: relative;
+        }
+        .floating-label input:focus + label,
+        .floating-label input:not(:placeholder-shown) + label {
+            transform: translateY(-1.5rem) scale(0.8);
+            color: #7a9b76;
+        }
+        .chart-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">$</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-800">SmartExpense</span>
+                    </div>
+                </div>
+                <div class="flex space-x-8">
+                    <a href="index.html" class="nav-tab active px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Dashboard</a>
+                    <a href="analytics.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Analytics</a>
+                    <a href="budget.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Budget</a>
+                    <a href="settings.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Settings</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="p-2 text-gray-600 hover:text-green-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5-5-5h5v-12"></path>
+                        </svg>
+                    </button>
+                    <img src="./resources/user-avatar.jpg" alt="Profile" class="w-8 h-8 rounded-full">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero-bg h-32 flex items-center justify-center relative">
+        <div class="text-center text-white z-10">
+            <h1 class="text-2xl font-bold mb-2" data-splitting>Financial Dashboard</h1>
+            <p class="text-sm opacity-90">Track, analyze, and optimize your expenses</p>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Balance Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="balance-card card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white/80 text-sm">Current Balance</p>
+                        <p class="text-2xl font-bold mono" id="current-balance">$4,287.50</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"></path>
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Monthly Income</p>
+                        <p class="text-2xl font-bold mono text-green-600">$5,200.00</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Monthly Expenses</p>
+                        <p class="text-2xl font-bold mono text-red-500">$3,147.50</p>
+                    </div>
+                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Panel - Quick Add & Categories -->
+            <div class="space-y-6">
+                <!-- Quick Add Transaction -->
+                <div class="card rounded-xl p-6">
+                    <h3 class="text-lg font-semibold mb-4">Add Transaction</h3>
+                    <form id="transaction-form" class="space-y-4">
+                        <div class="floating-label">
+                            <input type="number" id="amount" placeholder=" " class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <label for="amount" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Amount</label>
+                        </div>
+                        <div class="floating-label">
+                            <input type="text" id="description" placeholder=" " class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <label for="description" class="absolute left-4 top-3 text-gray-500 transition-all duration-200 pointer-events-none">Description</label>
+                        </div>
+                        <select id="category" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none">
+                            <option value="">Select Category</option>
+                            <option value="food">🍽️ Food & Dining</option>
+                            <option value="transport">🚗 Transportation</option>
+                            <option value="shopping">🛍️ Shopping</option>
+                            <option value="utilities">⚡ Utilities</option>
+                            <option value="entertainment">🎬 Entertainment</option>
+                            <option value="health">🏥 Healthcare</option>
+                            <option value="education">📚 Education</option>
+                            <option value="other">📋 Other</option>
+                        </select>
+                        <div class="flex space-x-2">
+                            <button type="button" id="expense-btn" class="btn-primary flex-1 py-3 px-4 rounded-lg font-medium">Expense</button>
+                            <button type="button" id="income-btn" class="btn-secondary flex-1 py-3 px-4 rounded-lg font-medium">Income</button>
+                        </div>
+                        <button type="submit" class="w-full btn-primary py-3 px-4 rounded-lg font-medium">Add Transaction</button>
+                    </form>
+                </div>
+
+                <!-- Budget Overview -->
+                <div class="card rounded-xl p-6">
+                    <h3 class="text-lg font-semibold mb-4">Budget Overview</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Food & Dining</span>
+                            <span class="text-sm mono">$320 / $500</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: 64%"></div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Transportation</span>
+                            <span class="text-sm mono">$180 / $300</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-yellow-500 h-2 rounded-full" style="width: 60%"></div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600">Shopping</span>
+                            <span class="text-sm mono">$450 / $400</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-red-500 h-2 rounded-full" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Transaction Feed -->
+            <div class="card rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold">Recent Transactions</h3>
+                    <div class="flex space-x-2">
+                        <button class="filter-btn px-3 py-1 text-sm rounded-full border border-gray-300 hover:bg-green-50 hover:border-green-300 transition-colors" data-filter="all">All</button>
+                        <button class="filter-btn px-3 py-1 text-sm rounded-full border border-gray-300 hover:bg-green-50 hover:border-green-300 transition-colors" data-filter="expense">Expenses</button>
+                        <button class="filter-btn px-3 py-1 text-sm rounded-full border border-gray-300 hover:bg-green-50 hover:border-green-300 transition-colors" data-filter="income">Income</button>
+                    </div>
+                </div>
+                <div id="transactions-list" class="space-y-3 max-h-96 overflow-y-auto">
+                    <!-- Transactions will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Right Panel - Analytics -->
+            <div class="space-y-6">
+                <!-- Spending Chart -->
+                <div class="chart-container">
+                    <h3 class="text-lg font-semibold mb-4">Spending Trends</h3>
+                    <div id="spending-chart" style="height: 200px;"></div>
+                </div>
+
+                <!-- Category Breakdown -->
+                <div class="chart-container">
+                    <h3 class="text-lg font-semibold mb-4">Category Breakdown</h3>
+                    <div id="category-chart" style="height: 200px;"></div>
+                </div>
+
+                <!-- Smart Insights -->
+                <div class="card rounded-xl p-6">
+                    <h3 class="text-lg font-semibold mb-4">Smart Insights</h3>
+                    <div id="insights-list" class="space-y-3">
+                        <!-- Insights will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>

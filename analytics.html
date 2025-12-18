@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Tracker - Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f6f7 0%, #e8eaed 100%);
+            min-height: 100vh;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .nav-tab {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #7a9b76;
+        }
+        .chart-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        .filter-btn {
+            transition: all 0.3s ease;
+        }
+        .filter-btn.active {
+            background: #7a9b76;
+            color: white;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #7a9b76 0%, #5a8a5a 100%);
+            color: white;
+        }
+        .export-btn {
+            background: #81a1c1;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .export-btn:hover {
+            background: #5a8a9a;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">$</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-800">SmartExpense</span>
+                    </div>
+                </div>
+                <div class="flex space-x-8">
+                    <a href="index.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Dashboard</a>
+                    <a href="analytics.html" class="nav-tab active px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Analytics</a>
+                    <a href="budget.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Budget</a>
+                    <a href="settings.html" class="nav-tab px-3 py-2 text-sm font-medium text-gray-700 hover:text-green-600">Settings</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="export-btn px-4 py-2 rounded-lg text-sm font-medium" onclick="exportData()">
+                        Export Data
+                    </button>
+                    <img src="./resources/user-avatar.jpg" alt="Profile" class="w-8 h-8 rounded-full">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Financial Analytics</h1>
+            <p class="text-gray-600">Deep insights into your spending patterns and financial trends</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="card rounded-xl p-6 mb-8">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap gap-2">
+                    <button class="filter-btn active px-4 py-2 rounded-lg text-sm font-medium border" data-period="7d">Last 7 Days</button>
+                    <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border" data-period="30d">Last 30 Days</button>
+                    <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border" data-period="90d">Last 3 Months</button>
+                    <button class="filter-btn px-4 py-2 rounded-lg text-sm font-medium border" data-period="1y">Last Year</button>
+                </div>
+                <div class="flex gap-2">
+                    <select id="category-filter" class="px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                        <option value="all">All Categories</option>
+                        <option value="food">Food & Dining</option>
+                        <option value="transport">Transportation</option>
+                        <option value="shopping">Shopping</option>
+                        <option value="utilities">Utilities</option>
+                        <option value="entertainment">Entertainment</option>
+                        <option value="health">Healthcare</option>
+                        <option value="education">Education</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="metric-card card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white/80 text-sm">Total Spent</p>
+                        <p class="text-2xl font-bold mono" id="total-spent">$0.00</p>
+                    </div>
+                    <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Avg Daily</p>
+                        <p class="text-2xl font-bold mono text-blue-600" id="avg-daily">$0.00</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Top Category</p>
+                        <p class="text-2xl font-bold text-gray-800" id="top-category">-</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="card rounded-xl p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Transactions</p>
+                        <p class="text-2xl font-bold mono text-green-600" id="transaction-count">0</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Spending Trends -->
+            <div class="chart-container">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold">Spending Trends</h3>
+                    <div class="flex space-x-2">
+                        <button class="chart-type-btn px-3 py-1 text-sm rounded-full border border-gray-300 hover:bg-green-50" data-chart="line">Line</button>
+                        <button class="chart-type-btn px-3 py-1 text-sm rounded-full border border-gray-300 hover:bg-green-50" data-chart="bar">Bar</button>
+                    </div>
+                </div>
+                <div id="trends-chart" style="height: 350px;"></div>
+            </div>
+
+            <!-- Category Distribution -->
+            <div class="chart-container">
+                <h3 class="text-xl font-semibold mb-6">Category Distribution</h3>
+                <div id="category-distribution-chart" style="height: 350px;"></div>
+            </div>
+        </div>
+
+        <!-- Monthly Comparison -->
+        <div class="chart-container mb-8">
+            <h3 class="text-xl font-semibold mb-6">Monthly Comparison</h3>
+            <div id="monthly-comparison-chart" style="height: 400px;"></div>
+        </div>
+
+        <!-- Detailed Analytics -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Spending Heatmap -->
+            <div class="chart-container">
+                <h3 class="text-xl font-semibold mb-6">Daily Spending Heatmap</h3>
+                <div id="heatmap-chart" style="height: 300px;"></div>
+            </div>
+
+            <!-- Top Merchants -->
+            <div class="card rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-6">Top Merchants</h3>
+                <div id="top-merchants" class="space-y-4">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Financial Health Score -->
+            <div class="card rounded-xl p-6">
+                <h3 class="text-xl font-semibold mb-6">Financial Health</h3>
+                <div class="text-center">
+                    <div class="relative w-32 h-32 mx-auto mb-4">
+                        <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="50" stroke="#e5e7eb" stroke-width="8" fill="none"/>
+                            <circle id="health-progress" cx="60" cy="60" r="50" stroke="#7a9b76" stroke-width="8" 
+                                    fill="none" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"/>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="health-score" class="text-2xl font-bold text-gray-800">0</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">Overall Score</p>
+                    <div id="health-indicators" class="space-y-2">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Analytics Page JavaScript
+        class AnalyticsPage {
+            constructor() {
+                this.transactions = this.loadTransactions();
+                this.currentPeriod = '7d';
+                this.currentCategory = 'all';
+                this.charts = {};
+                this.init();
+            }
+
+            init() {
+                this.setupEventListeners();
+                this.initializeCharts();
+                this.updateMetrics();
+                this.animateElements();
+            }
+
+            setupEventListeners() {
+                // Period filters
+                document.querySelectorAll('[data-period]').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.setPeriod(e.target.dataset.period));
+                });
+
+                // Category filter
+                document.getElementById('category-filter').addEventListener('change', (e) => {
+                    this.currentCategory = e.target.value;
+                    this.updateAllCharts();
+                });
+
+                // Chart type buttons
+                document.querySelectorAll('[data-chart]').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.setChartType(e.target.dataset.chart));
+                });
+            }
+
+            setPeriod(period) {
+                this.currentPeriod = period;
+                
+                // Update active button
+                document.querySelectorAll('[data-period]').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`[data-period="${period}"]`).classList.add('active');
+                
+                this.updateAllCharts();
+                this.updateMetrics();
+            }
+
+            setChartType(type) {
+                // Update active button
+                document.querySelectorAll('[data-chart]').forEach(btn => {
+                    btn.classList.remove('bg-green-100', 'border-green-300', 'text-green-700');
+                });
+                document.querySelector(`[data-chart="${type}"]`).classList.add('bg-green-100', 'border-green-300', 'text-green-700');
+                
+                this.updateTrendsChart(type);
+            }
+
+            getFilteredTransactions() {
+                let filtered = [...this.transactions];
+                
+                // Filter by period
+                const now = new Date();
+                let startDate;
+                
+                switch (this.currentPeriod) {
+                    case '7d':
+                        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case '30d':
+                        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        break;
+                    case '90d':
+                        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+                        break;
+                    case '1y':
+                        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+                        break;
+                }
+                
+                filtered = filtered.filter(t => new Date(t.date) >= startDate);
+                
+                // Filter by category
+                if (this.currentCategory !== 'all') {
+                    filtered = filtered.filter(t => t.category === this.currentCategory);
+                }
+                
+                return filtered;
+            }
+
+            initializeCharts() {
+                this.initTrendsChart();
+                this.initCategoryDistributionChart();
+                this.initMonthlyComparisonChart();
+                this.initHeatmapChart();
+                this.updateTopMerchants();
+                this.updateFinancialHealth();
+            }
+
+            initTrendsChart() {
+                const chartDom = document.getElementById('trends-chart');
+                this.charts.trends = echarts.init(chartDom);
+                this.updateTrendsChart('line');
+            }
+
+            updateTrendsChart(type = 'line') {
+                const data = this.getTrendsData();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        borderColor: '#7a9b76',
+                        textStyle: { color: '#2d3748' }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: data.dates,
+                        axisLine: { lineStyle: { color: '#e2e8f0' } },
+                        axisTick: { show: false },
+                        axisLabel: { color: '#64748b', fontSize: 11 }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        axisLabel: { color: '#64748b', fontSize: 11, formatter: '${value}' },
+                        splitLine: { lineStyle: { color: '#f1f5f9' } }
+                    },
+                    series: [{
+                        data: data.amounts,
+                        type: type,
+                        smooth: type === 'line',
+                        lineStyle: type === 'line' ? { color: '#7a9b76', width: 3 } : undefined,
+                        itemStyle: { color: '#7a9b76' },
+                        areaStyle: type === 'line' ? {
+                            color: {
+                                type: 'linear',
+                                x: 0, y: 0, x2: 0, y2: 1,
+                                colorStops: [
+                                    { offset: 0, color: 'rgba(122, 155, 118, 0.3)' },
+                                    { offset: 1, color: 'rgba(122, 155, 118, 0.05)' }
+                                ]
+                            }
+                        } : undefined
+                    }]
+                };
+                
+                this.charts.trends.setOption(option);
+            }
+
+            getTrendsData() {
+                const transactions = this.getFilteredTransactions();
+                const expenseData = transactions.filter(t => t.amount < 0);
+                
+                // Group by date
+                const grouped = {};
+                expenseData.forEach(t => {
+                    const date = new Date(t.date).toDateString();
+                    if (!grouped[date]) {
+                        grouped[date] = 0;
+                    }
+                    grouped[date] += Math.abs(t.amount);
+                });
+                
+                // Convert to arrays
+                const dates = Object.keys().sort((a, b) => new Date(a) - new Date(b));
+                const amounts = dates.map(date => grouped[date]);
+                
+                return {
+                    dates: dates.map(d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+                    amounts: amounts
+                };
+            }
+
+            initCategoryDistributionChart() {
+                const chartDom = document.getElementById('category-distribution-chart');
+                this.charts.categoryDistribution = echarts.init(chartDom);
+                this.updateCategoryDistributionChart();
+            }
+
+            updateCategoryDistributionChart() {
+                const data = this.getCategoryData();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'item',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        borderColor: '#7a9b76',
+                        textStyle: { color: '#2d3748' },
+                        formatter: '{b}: ${c} ({d}%)'
+                    },
+                    series: [{
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['50%', '50%'],
+                        data: data,
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowOffsetX: 0,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        },
+                        label: {
+                            show: true,
+                            formatter: '{b}\n${c}',
+                            fontSize: 11,
+                            color: '#2d3748'
+                        },
+                        labelLine: {
+                            show: true
+                        }
+                    }]
+                };
+                
+                this.charts.categoryDistribution.setOption(option);
+            }
+
+            getCategoryData() {
+                const categories = {
+                    food: { name: 'Food & Dining', color: '#e07a5f' },
+                    transport: { name: 'Transportation', color: '#81a1c1' },
+                    shopping: { name: 'Shopping', color: '#b893a3' },
+                    utilities: { name: 'Utilities', color: '#f2cc8f' },
+                    entertainment: { name: 'Entertainment', color: '#a8a3c7' },
+                    health: { name: 'Healthcare', color: '#7a9b76' },
+                    education: { name: 'Education', color: '#5a9b9b' },
+                    other: { name: 'Other', color: '#d4b896' }
+                };
+                
+                const transactions = this.getFilteredTransactions();
+                const expenseData = transactions.filter(t => t.amount < 0);
+                
+                const categoryTotals = {};
+                expenseData.forEach(t => {
+                    if (!categoryTotals[t.category]) {
+                        categoryTotals[t.category] = 0;
+                    }
+                    categoryTotals[t.category] += Math.abs(t.amount);
+                });
+                
+                return Object.entries(categoryTotals).map(([key, value]) => ({
+                    name: categories[key]?.name || key,
+                    value: value,
+                    itemStyle: { color: categories[key]?.color || '#7a9b76' }
+                }));
+            }
+
+            initMonthlyComparisonChart() {
+                const chartDom = document.getElementById('monthly-comparison-chart');
+                this.charts.monthlyComparison = echarts.init(chartDom);
+                this.updateMonthlyComparisonChart();
+            }
+
+            updateMonthlyComparisonChart() {
+                const data = this.getMonthlyComparisonData();
+                
+                const option = {
+                    tooltip: {
+                        trigger: 'axis',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        borderColor: '#7a9b76',
+                        textStyle: { color: '#2d3748' }
+                    },
+                    legend: {
+                        data: ['Income', 'Expenses', 'Savings'],
+                        bottom: 0,
+                        textStyle: { color: '#2d3748' }
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '15%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: data.months,
+                        axisLine: { lineStyle: { color: '#e2e8f0' } },
+                        axisTick: { show: false },
+                        axisLabel: { color: '#64748b', fontSize: 11 }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        axisLine: { show: false },
+                        axisTick: { show: false },
+                        axisLabel: { color: '#64748b', fontSize: 11, formatter: '${value}' },
+                        splitLine: { lineStyle: { color: '#f1f5f9' } }
+                    },
+                    series: [
+                        {
+                            name: 'Income',
+                            type: 'bar',
+                            data: data.income,
+                            itemStyle: { color: '#7a9b76' }
+                        },
+                        {
+                            name: 'Expenses',
+                            type: 'bar',
+                            data: data.expenses,
+                            itemStyle: { color: '#e07a5f' }
+                        },
+                        {
+                            name: 'Savings',
+                            type: 'line',
+                            data: data.savings,
+                            lineStyle: { color: '#81a1c1', width: 3 },
+                            itemStyle: { color: '#81a1c1' }
+                        }
+                    ]
+                };
+                
+                this.charts.monthlyComparison.setOption(option);
+            }
+
+            getMonthlyComparisonData() {
+                // Mock data for demonstration
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                const income = [5200, 5200, 5200, 5200, 5200, 5200];
+                const expenses = [3800, 4200, 3600, 4100, 3900, 4300];
+                const savings = income.map((inc, i) => inc - expenses[i]);
+                
+                return { months, income, expenses, savings };
+            }
+
+            initHeatmapChart() {
+                const chartDom = document.getElementById('heatmap-chart');
+                this.charts.heatmap = echarts.init(chartDom);
+                this.updateHeatmapChart();
+            }
+
+            updateHeatmapChart() {
+                const data = this.getHeatmapData();
+                
+                const option = {
+                    tooltip: {
+                        position: 'top',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        borderColor: '#7a9b76',
+                        textStyle: { color: '#2d3748' },
+                        formatter: function(params) {
+                            return `${params.data[0]}: $${params.data[1].toFixed(2)}`;
+                        }
+                    },
+                    grid: {
+                        height: '50%',
+                        top: '10%'
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                        splitArea: { show: true },
+                        axisLabel: { color: '#64748b', fontSize: 11 }
+                    },
+                    yAxis: {
+                        type: 'category',
+                        data: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                        splitArea: { show: true },
+                        axisLabel: { color: '#64748b', fontSize: 11 }
+                    },
+                    visualMap: {
+                        min: 0,
+                        max: Math.max(...data.map(d => d[1])),
+                        calculable: true,
+                        orient: 'horizontal',
+                        left: 'center',
+                        bottom: '15%',
+                        inRange: {
+                            color: ['#f1f5f9', '#7a9b76']
+                        },
+                        textStyle: { color: '#64748b', fontSize: 11 }
+                    },
+                    series: [{
+                        name: 'Spending',
+                        type: 'heatmap',
+                        data: data,
+                        label: {
+                            show: true,
+                            formatter: '${c}',
+                            fontSize: 10,
+                            color: '#2d3748'
+                        },
+                        emphasis: {
+                            itemStyle: {
+                                shadowBlur: 10,
+                                shadowColor: 'rgba(0, 0, 0, 0.5)'
+                            }
+                        }
+                    }]
+                };
+                
+                this.charts.heatmap.setOption(option);
+            }
+
+            getHeatmapData() {
+                // Generate mock heatmap data
+                const data = [];
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const weeks = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                
+                for (let w = 0; w < weeks.length; w++) {
+                    for (let d = 0; d < days.length; d++) {
+                        const amount = Math.random() * 200 + 20; // Random spending between $20-$220
+                        data.push([days[d], weeks[w], Math.round(amount * 100) / 100]);
+                    }
+                }
+                
+                return data;
+            }
+
+            updateTopMerchants() {
+                const merchants = [
+                    { name: 'Grocery Store', amount: 245.30, transactions: 8 },
+                    { name: 'Gas Station', amount: 180.25, transactions: 6 },
+                    { name: 'Amazon', amount: 156.99, transactions: 4 },
+                    { name: 'Coffee Shop', amount: 89.50, transactions: 12 },
+                    { name: 'Restaurant', amount: 234.80, transactions: 5 }
+                ];
+                
+                const container = document.getElementById('top-merchants');
+                container.innerHTML = merchants.map(merchant => `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="font-medium text-gray-800">${merchant.name}</p>
+                            <p class="text-sm text-gray-500">${merchant.transactions} transactions</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-semibold mono text-gray-800">$${merchant.amount.toFixed(2)}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            updateFinancialHealth() {
+                const score = 78; // Mock score
+                const indicators = [
+                    { label: 'Savings Rate', value: 'Good', color: 'text-green-600' },
+                    { label: 'Budget Adherence', value: 'Fair', color: 'text-yellow-600' },
+                    { label: 'Expense Control', value: 'Good', color: 'text-green-600' },
+                    { label: 'Income Stability', value: 'Excellent', color: 'text-green-600' }
+                ];
+                
+                // Update score
+                document.getElementById('health-score').textContent = score;
+                
+                // Animate progress circle
+                const circumference = 2 * Math.PI * 50;
+                const offset = circumference - (score / 100) * circumference;
+                
+                anime({
+                    targets: '#health-progress',
+                    strokeDashoffset: [circumference, offset],
+                    duration: 2000,
+                    easing: 'easeOutExpo'
+                });
+                
+                // Update indicators
+                const container = document.getElementById('health-indicators');
+                container.innerHTML = indicators.map(indicator => `
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-600">${indicator.label}</span>
+                        <span class="font-medium ${indicator.color}">${indicator.value}</span>
+                    </div>
+                `).join('');
+            }
+
+            updateMetrics() {
+                const transactions = this.getFilteredTransactions();
+                const expenses = transactions.filter(t => t.amount < 0);
+                const totalSpent = expenses.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+                const avgDaily = totalSpent / (this.currentPeriod === '7d' ? 7 : this.currentPeriod === '30d' ? 30 : this.currentPeriod === '90d' ? 90 : 365);
+                
+                // Animate metrics
+                anime({
+                    targets: { value: 0 },
+                    value: totalSpent,
+                    duration: 2000,
+                    easing: 'easeOutExpo',
+                    update: function(anim) {
+                        document.getElementById('total-spent').textContent = `$${anim.animatables[0].target.value.toFixed(2)}`;
+                    }
+                });
+                
+                anime({
+                    targets: { value: 0 },
+                    value: avgDaily,
+                    duration: 2000,
+                    easing: 'easeOutExpo',
+                    update: function(anim) {
+                        document.getElementById('avg-daily').textContent = `$${anim.animatables[0].target.value.toFixed(2)}`;
+                    }
+                });
+                
+                document.getElementById('transaction-count').textContent = transactions.length;
+                
+                // Update top category
+                const categoryData = this.getCategoryData();
+                const topCategory = categoryData.reduce((max, cat) => cat.value > max.value ? cat : max, { value: 0 });
+                document.getElementById('top-category').textContent = topCategory.name || '-';
+            }
+
+            updateAllCharts() {
+                this.updateTrendsChart();
+                this.updateCategoryDistributionChart();
+                this.updateMonthlyComparisonChart();
+                this.updateHeatmapChart();
+                this.updateMetrics();
+            }
+
+            animateElements() {
+                anime({
+                    targets: '.card',
+                    translateY: [50, 0],
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 1000,
+                    delay: anime.stagger(100)
+                });
+                
+                anime({
+                    targets: '.chart-container',
+                    translateY: [30, 0],
+                    opacity: [0, 1],
+                    easing: 'easeOutExpo',
+                    duration: 1200,
+                    delay: anime.stagger(150, {start: 300})
+                });
+            }
+
+            loadTransactions() {
+                const saved = localStorage.getItem('expenseTrackerTransactions');
+                if (saved) {
+                    return JSON.parse(saved);
+                }
+                
+                // Return mock data
+                return [
+                    { id: 1, amount: -45.50, description: 'Grocery Store', category: 'food', type: 'expense', date: '2025-12-14T10:30:00Z' },
+                    { id: 2, amount: -25.00, description: 'Gas Station', category: 'transport', type: 'expense', date: '2025-12-14T08:15:00Z' },
+                    { id: 3, amount: 3200.00, description: 'Salary', category: 'other', type: 'income', date: '2025-12-13T09:00:00Z' },
+                    { id: 4, amount: -89.99, description: 'Online Shopping', category: 'shopping', type: 'expense', date: '2025-12-13T14:20:00Z' },
+                    { id: 5, amount: -15.50, description: 'Coffee Shop', category: 'food', type: 'expense', date: '2025-12-12T16:45:00Z' },
+                    { id: 6, amount: -120.00, description: 'Electric Bill', category: 'utilities', type: 'expense', date: '2025-12-12T11:00:00Z' },
+                    { id: 7, amount: -35.00, description: 'Movie Theater', category: 'entertainment', type: 'expense', date: '2025-12-11T19:30:00Z' },
+                    { id: 8, amount: 200.00, description: 'Freelance Payment', category: 'other', type: 'income', date: '2025-12-11T15:00:00Z' },
+                    { id: 9, amount: -67.80, description: 'Restaurant', category: 'food', type: 'expense', date: '2025-12-10T20:15:00Z' },
+                    { id: 10, amount: -42.30, description: 'Pharmacy', category: 'health', type: 'expense', date: '2025-12-10T13:30:00Z' }
+                ];
+            }
+        }
+
+        // Export function
+        function exportData() {
+            const data = JSON.stringify(localStorage.getItem('expenseTrackerTransactions'), null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'expense-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            new AnalyticsPage();
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                Object.values(window.analyticsCharts || {}).forEach(chart => {
+                    chart.resize();
+                });
+            });
+        });
+    </script>
+</body>
+</html>
